@@ -83,7 +83,9 @@ Adafruit_TFTLCD::Adafruit_TFTLCD(uint8_t cs, uint8_t cd, uint8_t wr, uint8_t rd,
     pinMode(reset, OUTPUT);
   }
 #endif
-
+  useMask_ = false;
+  maskValue_ = 0;
+  eraseMask_ = 0;
   init();
 }
 
@@ -729,11 +731,26 @@ void Adafruit_TFTLCD::fillScreen(uint16_t color) {
   flood(color, (long)TFTWIDTH * (long)TFTHEIGHT);
 }
 
+void Adafruit_TFTLCD::useMask(bool v){useMask_ = v;};
+void Adafruit_TFTLCD::setMask(uint16_t eraseMask, uint16_t value)
+{
+  eraseMask_ = eraseMask;
+  maskValue_ = value;
+}
+
 void Adafruit_TFTLCD::drawPixel(int16_t x, int16_t y, uint16_t color) {
 
   // Clip
   if ((x < 0) || (y < 0) || (x >= _width) || (y >= _height))
     return;
+
+  if(useMask_)
+  {
+    if((fastReadPixel(x,y) & eraseMask_) != maskValue_)
+    {
+      return;
+    }
+  }
 
   CS_ACTIVE;
   if (driver == ID_932X) {
@@ -788,7 +805,11 @@ void Adafruit_TFTLCD::drawPixel(int16_t x, int16_t y, uint16_t color) {
     write8(lo);
 
   } else if ((driver == ID_9341) || (driver == ID_HX8357D)) {
-    setAddrWindow(x, y, _width - 1, _height - 1);
+    if(!useMask_)
+    {
+      setAddrWindow(x, y, _width - 1, _height - 1);
+    }
+    
     CS_ACTIVE;
     CD_COMMAND;
     write8(0x2C);
@@ -1008,16 +1029,37 @@ uint16_t Adafruit_TFTLCD::readPixel(int16_t x, int16_t y) {
     write8(ILI9341_MEMORYREAD);
     setReadDir();
     CD_DATA;
-    delayMicroseconds(50);
-    read8(r);
-    read8(r);
-    read8(g);
-    read8(b);
+    read8inline(r);
+    read8inline(r);
+    read8inline(g);
+    read8inline(b);
     setWriteDir();
     CS_IDLE;
     return (((uint16_t)r & B11111000) << 8) | (((uint16_t)g & B11111100) << 3) |
            (b >> 3);
 
+  } else return 0;
+}
+
+uint16_t Adafruit_TFTLCD::fastReadPixel(int16_t x, int16_t y)
+{
+  if(driver == ID_9341) {
+    uint8_t r;
+    setAddrWindow(x, y, width()-1, height()-1);
+    CS_ACTIVE;
+    CD_COMMAND; 
+    write8(ILI9341_MEMORYREAD);
+    setReadDir();
+    CD_DATA;
+    // read8inline(r);
+    RD_ACTIVE;                                                                 
+    DELAY1;                                                                  
+    RD_IDLE;
+
+    read8inlineFast(r);
+    setWriteDir();
+    CS_IDLE;
+    return (((uint16_t)r & B11111000) << 8);
   } else return 0;
 }
 

@@ -39,11 +39,17 @@ public:
   void setAddrWindow(int x1, int y1, int x2, int y2);
   void pushColors(uint16_t *data, uint8_t len, boolean first);
 
-  uint16_t color565(uint8_t r, uint8_t g, uint8_t b),
-      readPixel(int16_t x, int16_t y), readID(void);
+  uint16_t color565(uint8_t r, uint8_t g, uint8_t b);
+  uint16_t readPixel(int16_t x, int16_t y);
+  uint16_t fastReadPixel(int16_t x, int16_t y);
+  uint16_t readID(void);
   uint32_t readReg(uint8_t r);
-
+  void useMask(bool v);
+  void setMask(uint16_t eraseMask, uint16_t value);
 private:
+  uint16_t maskValue_;
+  bool useMask_;
+  uint16_t eraseMask_;
   void init(),
   // These items may have previously been defined as macros
   // in pin_magic.h.  If not, function versions are declared:
@@ -95,5 +101,7 @@ private:
 // Color function name was changed to 'color565' for parity with 2.2" LCD
 // library.
 #define Color565 color565
+
+      
 
 #endif

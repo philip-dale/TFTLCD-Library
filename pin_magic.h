@@ -64,6 +64,25 @@
                "nop"                                                           \
                "\n" ::);
 
+#define DELAY1                                                                 \
+  asm volatile("nop"                                                           \
+               "\n" ::);
+
+#define DELAY5                                                                 \
+  asm volatile("rjmp .+0"                                                      \
+               "\n\t"                                                          \
+               "rjmp .+0"                                                      \
+               "\n\t"                                                          \
+               "nop"                                                           \
+               "\n" ::);
+
+#define DELAY3                                                                 \
+  asm volatile("rjmp .+0"                                                      \
+               "\n\t"                                                          \
+               "nop"                                                           \
+               "\n" ::);
+
+
 #if defined(__AVR_ATmega168__) || defined(__AVR_ATmega328P__) ||               \
     defined(__AVR_ATmega328__) || defined(__AVR_ATmega8__)
 
@@ -210,7 +229,9 @@
   	PORTG &= ~(0x20);\
   	PORTG |= (d & 0x10) << 1; \ 
     WR_STROBE; }
-  #define read8inline(result) { RD_ACTIVE; DELAY7; result = (PINH & 0x60) >> 5;result |= (PINH & 0x18) << 3;result |= (PINE & 0x8) << 2;result |= (PINE & 0x30) >> 2;result |= (PING & 0x20) >> 1;RD_IDLE;}
+  #define read8inline(result)     { RD_ACTIVE; DELAY7; result = (PINH & 0x60) >> 5;result |= (PINH & 0x18) << 3;result |= (PINE & 0x8) << 2;result |= (PINE & 0x30) >> 2;result |= (PING & 0x20) >> 1;RD_IDLE;}
+  #define read8inlineFast(result) { RD_ACTIVE; DELAY1; result = (PINH & 0x60) >> 5;result |= (PINH & 0x18) << 3;result |= (PINE & 0x8) << 2;result |= (PINE & 0x30) >> 2;result |= (PING & 0x20) >> 1;RD_IDLE;}
+  
   #define setWriteDirInline() { DDRH |= 0x78;DDRE |= 0x38;DDRG |= 0x20; }
   #define setReadDirInline()  { DDRH &= ~0x78;DDRE &= ~0x38;DDRG &= ~(0x20); }
 
